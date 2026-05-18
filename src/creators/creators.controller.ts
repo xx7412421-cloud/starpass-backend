@@ -1,45 +1,48 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../common/prisma.service';
+import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { CreatorsService } from './creators.service';
 import { CreateCreatorDto } from './dto/create-creator.dto';
 import { UpdateCreatorDto } from './dto/update-creator.dto';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
-@Injectable()
-export class CreatorsService {
-  constructor(private prisma: PrismaService) {}
+@ApiTags('creators')
+@Controller('creators')
+export class CreatorsController {
+  constructor(private creatorsService: CreatorsService) {}
 
-  async findAll(page: number, limit: number) {
-    const skip = (page - 1) * limit;
-    const [creators, total] = await Promise.all([
-      this.prisma.creator.findMany({ skip, take: limit, orderBy: { createdAt: 'desc' } }),
-      this.prisma.creator.count(),
-    ]);
-    return { creators, total, page, limit };
+  @Get()
+  @ApiOperation({ summary: 'List all creators' })
+  findAll(@Query('page') page = 1, @Query('limit') limit = 20) {
+    return this.creatorsService.findAll(+page, +limit);
   }
 
-  async findByAddress(address: string) {
-    const creator = await this.prisma.creator.findFirst({ where: { address } });
-    if (!creator) throw new NotFoundException('Creator not found');
-    return creator;
+  @Get(':address')
+  @ApiOperation({ summary: 'Get creator by Stellar address' })
+  findOne(@Param('address') address: string) {
+    return this.creatorsService.findByAddress(address);
   }
 
-  async register(userId: string, dto: CreateCreatorDto, address: string) {
-    return this.prisma.creator.create({ data: { ...dto, address, userId } });
+  @Post('register')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Register as a creator' })
+  register(@Request() req: any, @Body() dto: CreateCreatorDto) {
+    return this.creatorsService.register(req.user.sub, dto, req.user.address);
   }
 
-  async update(address: string, dto: UpdateCreatorDto) {
-    const creator = await this.prisma.creator.findFirst({ where: { address } });
-    if (!creator) throw new NotFoundException('Creator not found');
-    return this.prisma.creator.update({ where: { id: creator.id }, data: dto });
+  @Patch('profile')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update creator profile' })
+  update(@Request() req: any, @Body() dto: UpdateCreatorDto) {
+    return this.creatorsService.update(req.user.address, dto);
   }
 
-  async getEarnings(address: string) {
-    const creator = await this.prisma.creator.findFirst({ where: { address } });
-    if (!creator) throw new NotFoundException('Creator not found');
-    const passes = await this.prisma.pass.findMany({
-      where: { tier: { creatorId: creator.id } },
-      include: { tier: true },
-    });
-    const total = passes.reduce((sum, p) => sum + Number(p.tier.price), 0);
-    return { address, totalEarnings: total, passCount: passes.length };
+  @Get(':address/earnings')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get creator earnings summary' })
+  getEarnings(@Param('address') address: string) {
+    return this.creatorsService.getEarnings(address);
   }
 }
