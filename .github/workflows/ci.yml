@@ -12,19 +12,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-
       - name: Install dependencies
         run: npm install
-
       - name: Generate Prisma client
         run: npx prisma generate
-
       - name: Run tests
         run: npm test
 
@@ -33,16 +28,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-
       - name: Install dependencies
         run: npm install
-
       - name: Run linter
         run: npm run lint
 
@@ -51,18 +42,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-
       - name: Install dependencies
         run: npm install
-
       - name: Generate Prisma client
         run: npx prisma generate
-
       - name: Build
         run: npm run build
