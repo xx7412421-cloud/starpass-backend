@@ -8,6 +8,10 @@ export class PassesService {
   /**
    * Check if a fan has a valid pass for a specific tier
    * This is the core access-gating function
+   * 
+   * @param fanAddress The Stellar public key of the fan.
+   * @param tierId The unique identifier of the tier.
+   * @returns True if the fan has an active pass for the tier, otherwise false.
    */
   async hasValidPass(fanAddress: string, tierId: string): Promise<boolean> {
     const fan = await this.prisma.fan.findUnique({
@@ -31,6 +35,10 @@ export class PassesService {
 
   /**
    * Check if a fan has any valid pass from a creator
+   * 
+   * @param fanAddress The Stellar public key of the fan.
+   * @param creatorAddress The Stellar public key of the creator.
+   * @returns True if the fan has at least one active pass from the creator, otherwise false.
    */
   async hasAnyValidPass(fanAddress: string, creatorAddress: string): Promise<boolean> {
     const fan = await this.prisma.fan.findUnique({
@@ -57,6 +65,11 @@ export class PassesService {
 
   /**
    * Get all passes for a fan
+   * 
+   * @param fanAddress The Stellar public key of the fan.
+   * @param activeOnly If true, returns only active, non-expired passes. Defaults to false.
+   * @returns A list of passes belonging to the fan.
+   * @throws {NotFoundException} If the fan is not found.
    */
   async findByFan(fanAddress: string, activeOnly = false) {
     const fan = await this.prisma.fan.findUnique({
@@ -80,6 +93,10 @@ export class PassesService {
 
   /**
    * Get pass count for a creator
+   * 
+   * @param creatorAddress The Stellar public key of the creator.
+   * @returns An object containing the total and active pass counts.
+   * @throws {NotFoundException} If the creator is not found.
    */
   async getCreatorPassCount(creatorAddress: string) {
     const creator = await this.prisma.creator.findUnique({
@@ -103,6 +120,9 @@ export class PassesService {
 
   /**
    * Upsert a pass from on-chain event data (called by indexer)
+   * 
+   * @param data The event data containing pass details from the blockchain.
+   * @returns The upserted pass record, or null if the creator or tier is not found.
    */
   async upsertFromChain(data: {
     onChainId: bigint;
