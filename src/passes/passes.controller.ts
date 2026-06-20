@@ -2,6 +2,7 @@ import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { PassesService } from './passes.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { ListPassesDto } from './dto/list-passes.dto';
 
 @ApiTags('passes')
 @Controller('passes')
@@ -50,6 +51,14 @@ export class PassesController {
   @ApiResponse({ status: 404, description: 'Creator not found' })
   getCreatorPassCount(@Param('address') address: string) {
     return this.passesService.getCreatorPassCount(address);
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'List all passes with filters and pagination' })
+  @ApiResponse({ status: 200, description: 'Return paginated list of passes' })
+  @ApiResponse({ status: 400, description: 'Invalid query parameters' })
+  findAll(@Query() query: ListPassesDto) {
+    return this.passesService.findAll(query);
   }
 }
 
