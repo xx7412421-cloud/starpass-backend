@@ -8,7 +8,7 @@ import { PassesModule } from './passes/passes.module';
 import { IndexerModule } from './indexer/indexer.module';
 import { StellarModule } from './stellar/stellar.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
-import { SearchModule } from './search/search.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -21,7 +21,7 @@ import { SearchModule } from './search/search.module';
     IndexerModule,
     StellarModule,
     WebhooksModule,
-    SearchModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}
