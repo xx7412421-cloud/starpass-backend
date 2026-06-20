@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards, Request, Delete } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { CreatorsService } from './creators.service';
 import { CreateCreatorDto } from './dto/create-creator.dto';
 import { UpdateCreatorDto } from './dto/update-creator.dto';
@@ -66,6 +66,9 @@ export class CreatorsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Register a webhook URL' })
+  @ApiResponse({ status: 201, description: 'Webhook successfully registered' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Creator not found' })
   registerWebhook(
     @Param('id') id: string,
     @Body() dto: RegisterWebhookDto,
@@ -77,6 +80,9 @@ export class CreatorsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Remove a webhook' })
+  @ApiResponse({ status: 200, description: 'Webhook successfully removed' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Webhook not found' })
   removeWebhook(
     @Param('id') id: string,
     @Param('webhookId') webhookId: string,
