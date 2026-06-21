@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PassesService } from './passes.service';
 import { PrismaService } from '../common/prisma.service';
 import { WebhooksService } from '../webhooks/webhooks.service';
@@ -112,6 +113,77 @@ describe('PassesService', () => {
       expect(prisma.pass.upsert).toHaveBeenCalled();
       expect(webhooksService.deliverPassPurchaseWebhook).not.toHaveBeenCalled();
       expect(result).toEqual(mockPass);
+    });
+  });
+
+  describe('getReceipt', () => {
+    const purchasedAt = new Date('2026-06-21T12:00:00.000Z');
+    const expiresAt = new Date('2026-07-21T12:00:00.000Z');
+    const mockPassReceipt = {
+      id: 'pass-uuid',
+      onChainId: BigInt(42),
+      active: true,
+      purchasedAt,
+      expiresAt,
+      txHash: 'stellar-tx-hash',
+      fan: {
+        id: 'fan-uuid',
+        stellarAddress: 'GB_FAN',
+      },
+      tier: {
+        id: 'tier-uuid',
+        name: 'Gold',
+        priceUsdc: { toString: () => '12.50' },
+      },
+      creator: {
+        id: 'creator-uuid',
+        stellarAddress: 'GB_CREATOR',
+        displayName: 'Creator',
+      },
+    };
+
+    it('should return purchase receipt details for the pass owner', async () => {
+      mockPrismaService.pass.findUnique.mockResolvedValue(mockPassReceipt);
+
+      const result = await service.getReceipt('pass-uuid', 'GB_FAN');
+
+      expect(prisma.pass.findUnique).toHaveBeenCalledWith({
+        where: { id: 'pass-uuid' },
+        include: {
+          tier: true,
+          creator: true,
+          fan: true,
+        },
+      });
+      expect(result).toEqual({
+        pass: {
+          id: 'pass-uuid',
+          onChainId: '42',
+          active: true,
+          expiresAt,
+        },
+        tier: mockPassReceipt.tier,
+        creator: mockPassReceipt.creator,
+        purchasedAt,
+        amount: '12.50',
+        txHash: 'stellar-tx-hash',
+      });
+    });
+
+    it('should reject receipt access for a different fan', async () => {
+      mockPrismaService.pass.findUnique.mockResolvedValue(mockPassReceipt);
+
+      await expect(service.getReceipt('pass-uuid', 'GB_OTHER')).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+    });
+
+    it('should throw when the pass is not found', async () => {
+      mockPrismaService.pass.findUnique.mockResolvedValue(null);
+
+      await expect(service.getReceipt('missing-pass', 'GB_FAN')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
   });
 });
